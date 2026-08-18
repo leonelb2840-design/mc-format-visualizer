@@ -38,7 +38,7 @@ Visualizador de formato de texto estilo **Minecraft** que interpreta los código
 ├── manifest.json   # Configuración PWA
 ├── README.md       # Este archivo
 ├── LICENSE # Licencia
-└──
+└── .gitignore # Git Configuración Files
 ```
 
 ## 🛠️ Desarrollo
