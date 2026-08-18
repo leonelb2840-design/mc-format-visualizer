@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="Visualizador de formato de texto estilo Minecraft con colores § y estilos. PWA gratuita.">
+  <title>MC Format Visualizer</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%231a1a2e'/%3E%3Ctext x='32' y='42' font-family='monospace' font-size='32' font-weight='bold' text-anchor='middle' fill='%2355FF55'%3E§%3C/text%3E%3C/svg%3E">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1a1a2e;
+      --bg2: #16213e;
+      --bg3: #0f0f23;
+      --fg: #eeeeee;
+      --muted: #aaaaaa;
+      --accent: #55FF55;
+      --border: #333355;
+      --shadow: 0 4px 0 #0a0a1a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Press Start 2P', 'Courier New', Courier, monospace;
+      font-size: 12px;
+      line-height: 1.8;
+      min-height: 100vh;
+    }
+    h1, h2, h3, h4 { text-transform: uppercase; letter-spacing: 1px; }
+    h1 {
+      text-align: center;
+      font-size: 18px;
+      color: var(--accent);
+      text-shadow: 2px 2px 0 #000;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    h1 svg { width: 40px; height: 40px; }
+    .card {
+      background: var(--bg2);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      background: var(--bg3);
+      color: var(--fg);
+      font-family: inherit;
+      font-size: 12px;
+      resize: vertical;
+      outline: none;
+    }
+    textarea:focus { border-color: var(--accent); }
+    #mc-output {
+      min-height: 100px;
+      padding: 16px;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      background: var(--bg3);
+      font-size: 14px;
+      line-height: 1.8;
+      word-break: break-word;
+      font-family: 'Press Start 2P', monospace;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media(min-width: 640px) {
+      .grid-2 { grid-template-columns: 1fr 1fr; }
+      body { font-size: 14px; padding: 32px; }
+      h1 { font-size: 24px; }
+      #mc-output { font-size: 16px; }
+    }
+    .palette-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: background 0.15s;
+      font-size: 10px;
+    }
+    .palette-item:hover { background: #1a1a3e; }
+    .swatch {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 2px solid #555;
+      flex-shrink: 0;
+    }
+    .example-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 4px;
+      transition: background 0.15s;
+      flex-wrap: wrap;
+    }
+    .example-row:hover { background: #1a1a3e; }
+    .example-code {
+      color: #888;
+      font-size: 10px;
+      min-width: 300px;
+      font-family: 'Courier New', monospace;
+    }
+    .install-btn {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 12px 20px;
+      font-family: inherit;
+      font-size: 10px;
+      text-transform: uppercase;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      z-index: 100;
+    }
+    .install-btn.show { display: block; }
+    footer {
+      text-align: center;
+      color: #555;
+      font-size: 10px;
+      margin-top: 24px;
+      padding-bottom: 24px;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h1>
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <rect width="64" height="64" rx="8" fill="#1a1a2e" stroke="#333355" stroke-width="2"/>
+      <rect x="8" y="8" width="48" height="48" rx="4" fill="#0f0f23" stroke="#333355" stroke-width="2"/>
+      <text x="32" y="44" font-family="'Press Start 2P', monospace" font-size="28" font-weight="bold" text-anchor="middle" fill="#55FF55">§</text>
+    </svg>
+    MC Format Visualizer
+  </h1>
+
+  <div class="card">
+    <label>✏️ Escribe tu texto con códigos §:</label>
+    <textarea id="mc-input" rows="5" placeholder="Ejemplo: §cHola §lMundo§r, esto es §b§oaqua y cursiva"></textarea>
+  </div>
+
+  <div class="card">
+    <label>👁️ Resultado visual:</label>
+    <div id="mc-output">
+      <span style="color: #888;">Escribe algo arriba para ver el resultado...</span>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="margin:0 0 10px 0;color:var(--muted);">🎨 Colores</h4>
+      <div id="color-palette"></div>
+    </div>
+    <div class="card">
+      <h4 style="margin:0 0 10px 0;color:var(--muted);">✨ Estilos</h4>
+      <div id="style-palette"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 10px 0;color:var(--muted);">📋 Ejemplos (clic para copiar)</h4>
+    <div id="examples"></div>
+  </div>
+
+  <button class="install-btn" id="installBtn">📲 Instalar App</button>
+
+  <footer>
+    Hecho con ❤️ · <a href="https://github.com" target="_blank">GitHub</a> · Formato § de Minecraft
+  </footer>
+
+  <script>
+    (function() {
+      const colors = {
+        '0': '#000000', '1': '#0000AA', '2': '#00AA00', '3': '#00AAAA',
+        '4': '#AA0000', '5': '#AA00AA', '6': '#FFAA00', '7': '#AAAAAA',
+        '8': '#555555', '9': '#5555FF', 'a': '#55FF55', 'b': '#55FFFF',
+        'c': '#FF5555', 'd': '#FF55FF', 'e': '#FFFF55', 'f': '#FFFFFF'
+      };
+      const colorNames = {
+        '0': 'Negro', '1': 'Azul oscuro', '2': 'Verde oscuro', '3': 'Aqua oscuro',
+        '4': 'Rojo oscuro', '5': 'Púrpura oscuro', '6': 'Oro / Naranja', '7': 'Gris',
+        '8': 'Gris oscuro', '9': 'Azul claro', 'a': 'Verde claro', 'b': 'Aqua claro',
+        'c': 'Rojo claro', 'd': 'Púrpura claro / Rosado', 'e': 'Amarillo', 'f': 'Blanco'
+      };
+      const styles = {
+        'k': 'Ofuscado', 'l': 'Negrita', 'm': 'Tachado', 'n': 'Subrayado', 'o': 'Cursiva', 'r': 'Restablecer'
+      };
+      const examples = [
+        '§c¡Hola §lMundo§r!',
+        '§b§oTexto en aqua y cursiva',
+        '§a§nVerde claro subrayado',
+        '§6§l§oOro, negrita y cursiva',
+        '§4§mRojo oscuro tachado',
+        '§d§l§nRosado, negrita y subrayado',
+        '§f§kTexto ofuscado §r(antes) y normal (después)',
+        '§9Azul claro §8§lgris oscuro negrita §7y gris normal'
+      ];
+
+      const obfMap = new Map();
+      let obfIdCounter = 0;
+
+      function renderPalette() {
+        const cp = document.getElementById('color-palette');
+        for (const [code, hex] of Object.entries(colors)) {
+          const row = document.createElement('div');
+          row.className = 'palette-item';
+          row.innerHTML = `<span class="swatch" style="background:${hex};"></span><span>§${code} — ${colorNames[code]}</span>`;
+          row.onclick = () => insertCode('§' + code);
+          cp.appendChild(row);
+        }
+        const sp = document.getElementById('style-palette');
+        for (const [code, name] of Object.entries(styles)) {
+          const row = document.createElement('div');
+          row.className = 'palette-item';
+          row.textContent = `§${code} — ${name}`;
+          row.onclick = () => insertCode('§' + code);
+          sp.appendChild(row);
+        }
+      }
+
+      function renderExamples() {
+        const exDiv = document.getElementById('examples');
+        examples.forEach(ex => {
+          const row = document.createElement('div');
+          row.className = 'example-row';
+          const codeSpan = document.createElement('code');
+          codeSpan.className = 'example-code';
+          codeSpan.textContent = ex;
+          const previewSpan = document.createElement('span');
+          previewSpan.appendChild(parseMinecraftText(ex));
+          row.appendChild(codeSpan);
+          row.appendChild(previewSpan);
+          row.onclick = () => {
+            document.getElementById('mc-input').value = ex;
+            updateOutput();
+          };
+          exDiv.appendChild(row);
+        });
+      }
+
+      function insertCode(code) {
+        const ta = document.getElementById('mc-input');
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        const text = ta.value;
+        ta.value = text.substring(0, start) + code + text.substring(end);
+        ta.selectionStart = ta.selectionEnd = start + code.length;
+        ta.focus();
+        updateOutput();
+      }
+
+      function parseMinecraftText(text) {
+        const container = document.createDocumentFragment();
+        let currentSpan = document.createElement('span');
+        currentSpan.style.color = '#FFFFFF';
+
+        let i = 0;
+        while (i < text.length) {
+          if (text[i] === '§' && i + 1 < text.length) {
+            const code = text[i + 1].toLowerCase();
+            if (code === 'r') {
+              if (currentSpan.childNodes.length > 0) container.appendChild(currentSpan);
+              currentSpan = document.createElement('span');
+              currentSpan.style.color = '#FFFFFF';
+            } else if (colors[code]) {
+              if (currentSpan.childNodes.length > 0) container.appendChild(currentSpan);
+              currentSpan = document.createElement('span');
+              currentSpan.style.color = colors[code];
+            } else if (code === 'l') {
+              currentSpan.style.fontWeight = 'bold';
+            } else if (code === 'o') {
+              currentSpan.style.fontStyle = 'italic';
+            } else if (code === 'n') {
+              currentSpan.style.textDecoration = (currentSpan.style.textDecoration || '') + ' underline';
+            } else if (code === 'm') {
+              currentSpan.style.textDecoration = (currentSpan.style.textDecoration || '') + ' line-through';
+            } else if (code === 'k') {
+              currentSpan.dataset.obfuscated = 'true';
+              currentSpan.classList.add('obfuscated');
+            }
+            i += 2;
+          } else {
+            currentSpan.appendChild(document.createTextNode(text[i]));
+            i++;
+          }
+        }
+        if (currentSpan.childNodes.length > 0) container.appendChild(currentSpan);
+        return container;
+      }
+
+      function updateOutput() {
+        const input = document.getElementById('mc-input').value;
+        const output = document.getElementById('mc-output');
+        output.innerHTML = '';
+        if (!input) {
+          output.innerHTML = '<span style="color: #888;">Escribe algo arriba para ver el resultado...</span>';
+          obfMap.clear();
+          return;
+        }
+        obfMap.clear();
+        const frag = parseMinecraftText(input);
+        output.appendChild(frag);
+        output.querySelectorAll('.obfuscated').forEach(span => {
+          const id = 'obf-' + (obfIdCounter++);
+          span.dataset.obfId = id;
+          obfMap.set(id, span.textContent.length);
+        });
+      }
+
+      const obfChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+      setInterval(() => {
+        const output = document.getElementById('mc-output');
+        if (!output) return;
+        output.querySelectorAll('.obfuscated').forEach(el => {
+          const id = el.dataset.obfId;
+          const len = obfMap.get(id);
+          if (!len) return;
+          let newText = '';
+          for (let i = 0; i < len; i++) newText += obfChars[Math.floor(Math.random() * obfChars.length)];
+          el.textContent = newText;
+        });
+      }, 100);
+
+      document.getElementById('mc-input').addEventListener('input', updateOutput);
+      renderPalette();
+      renderExamples();
+
+      // PWA install
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('installBtn').classList.add('show');
+      });
+      document.getElementById('installBtn').addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        document.getElementById('installBtn').classList.remove('show');
+      });
+    })();
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
